@@ -92,9 +92,7 @@
           const a = imageData.data[index + 3];
 
           // Filter out near-white pixels (simulate transparency)
-          const isWhite = r > 240 && g > 240 && b > 240;
-
-          if (a > 0 && !isWhite) {
+          if (a > 0) {
             const color = `rgba(${r},${g},${b},${a / 255})`;
             particles.push(new Particle(offsetX + x, offsetY + y, color));
           }
@@ -161,4 +159,5 @@
   </script>
 </body>
 </html>
+
 
