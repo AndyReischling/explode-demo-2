@@ -18,7 +18,7 @@
 <body>
   <canvas id="canvas"></canvas>
   <script>
-    const imgSrc = './your-uploaded-image-name.webp';
+    const imgSrc = './66beacab62592c10393dd236_b6da41c0-c0c8-4e2a-8f39-6642e36ab5b2.webp';
     const canvas = document.getElementById('canvas');
     const ctx = canvas.getContext('2d');
     let width, height;
@@ -27,13 +27,22 @@
     let exploded = false;
     let time = 0;
     let showImage = true;
+    let ready = false;
+    let centerX = 0, centerY = 0, iw = 0, ih = 0;
 
     function resize() {
       width = canvas.width = window.innerWidth;
       height = canvas.height = window.innerHeight;
     }
 
-    window.addEventListener('resize', resize);
+    window.addEventListener('resize', () => {
+      resize();
+      if (ready) {
+        centerX = width / 2 - iw / 2;
+        centerY = height / 2 - ih / 2;
+      }
+    });
+
     resize();
 
     class Particle {
@@ -95,7 +104,8 @@
       }
     }
 
-    function animate(centerX, centerY, iw, ih) {
+    function animate() {
+      if (!ready) return;
       time++;
       ctx.clearRect(0, 0, width, height);
 
@@ -108,26 +118,28 @@
         });
       }
 
-      requestAnimationFrame(() => animate(centerX, centerY, iw, ih));
+      requestAnimationFrame(animate);
     }
 
     img.onload = () => {
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
       const scale = 0.5;
-      const iw = img.width * scale;
-      const ih = img.height * scale;
+      iw = img.width * scale;
+      ih = img.height * scale;
       tempCanvas.width = iw;
       tempCanvas.height = ih;
       tempCtx.drawImage(img, 0, 0, iw, ih);
       const imageData = tempCtx.getImageData(0, 0, iw, ih);
-      const centerX = width / 2 - iw / 2;
-      const centerY = height / 2 - ih / 2;
+      centerX = width / 2 - iw / 2;
+      centerY = height / 2 - ih / 2;
       createParticles(imageData, centerX, centerY);
-      animate(centerX, centerY, iw, ih);
+      ready = true;
+      animate();
     };
 
     canvas.addEventListener('click', () => {
+      if (!ready) return;
       if (showImage) {
         showImage = false;
         exploded = true;
