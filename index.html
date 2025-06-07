@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Floating Exploding Image</title>
+  <style>
+    body {
+      margin: 0;
+      background-color: #111;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="canvas"></canvas>
+  <script>
+    const imgSrc = './66beacab62592c10393dd236_b6da41c0-c0c8-4e2a-8f39-6642e36ab5b2.webp';
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+    let img = new Image();
+    let particles = [];
+    let exploded = false;
+    let angle = 0;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    class Particle {
+      constructor(x, y, color) {
+        this.x = x;
+        this.y = y;
+        this.startX = x;
+        this.startY = y;
+        this.color = color;
+        this.radius = 1.5;
+        this.vx = (Math.random() - 0.5) * 10;
+        this.vy = (Math.random() - 0.5) * 10;
+        this.ax = 0;
+        this.ay = 0.05;
+        this.reassembling = false;
+      }
+
+      update() {
+        if (!this.reassembling) {
+          this.vx += this.ax;
+          this.vy += this.ay;
+          this.x += this.vx;
+          this.y += this.vy;
+        } else {
+          this.x += (this.startX - this.x) * 0.1;
+          this.y += (this.startY - this.y) * 0.1;
+        }
+      }
+
+      draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+
+    function createParticles(imageData, offsetX, offsetY) {
+      particles = [];
+      for (let y = 0; y < imageData.height; y += 4) {
+        for (let x = 0; x < imageData.width; x += 4) {
+          const index = (y * imageData.width + x) * 4;
+          const r = imageData.data[index];
+          const g = imageData.data[index + 1];
+          const b = imageData.data[index + 2];
+          const a = imageData.data[index + 3];
+          if (a > 0) {
+            const color = `rgba(${r},${g},${b},${a / 255})`;
+            particles.push(new Particle(offsetX + x, offsetY + y, color));
+          }
+        }
+      }
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, width, height);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animate);
+    }
+
+    img.onload = () => {
+      const tempCanvas = document.createElement('canvas');
+      const tempCtx = tempCanvas.getContext('2d');
+      const iw = img.width;
+      const ih = img.height;
+      tempCanvas.width = iw;
+      tempCanvas.height = ih;
+      tempCtx.drawImage(img, 0, 0);
+      const imageData = tempCtx.getImageData(0, 0, iw, ih);
+      const centerX = width / 2 - iw / 2;
+      const centerY = height / 2 - ih / 2;
+      createParticles(imageData, centerX, centerY);
+      animate();
+    };
+
+    canvas.addEventListener('click', () => {
+      if (!exploded) {
+        exploded = true;
+        particles.forEach(p => p.reassembling = false);
+      } else {
+        particles.forEach(p => p.reassembling = true);
+        setTimeout(() => { exploded = false; }, 1000);
+      }
+    });
+
+    img.src = imgSrc;
+  </script>
+</body>
+</html>
