@@ -25,7 +25,8 @@
     let img = new Image();
     let particles = [];
     let exploded = false;
-    let angle = 0;
+    let time = 0;
+    let showImage = true;
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -37,12 +38,16 @@
 
     class Particle {
       constructor(x, y, color) {
-        this.x = x;
-        this.y = y;
         this.startX = x;
         this.startY = y;
         this.color = color;
         this.radius = 1.5;
+        this.reset();
+      }
+
+      reset() {
+        this.x = this.startX;
+        this.y = this.startY;
         this.vx = (Math.random() - 0.5) * 10;
         this.vy = (Math.random() - 0.5) * 10;
         this.ax = 0;
@@ -51,12 +56,15 @@
       }
 
       update() {
-        if (!this.reassembling) {
+        if (!exploded && !showImage) {
+          this.x = this.startX + Math.sin(time / 60 + this.startY / 30) * 10;
+          this.y = this.startY + Math.cos(time / 60 + this.startX / 30) * 10;
+        } else if (exploded && !this.reassembling) {
           this.vx += this.ax;
           this.vy += this.ay;
           this.x += this.vx;
           this.y += this.vy;
-        } else {
+        } else if (this.reassembling) {
           this.x += (this.startX - this.x) * 0.1;
           this.y += (this.startY - this.y) * 0.1;
         }
@@ -87,37 +95,49 @@
       }
     }
 
-    function animate() {
+    function animate(centerX, centerY, iw, ih) {
+      time++;
       ctx.clearRect(0, 0, width, height);
-      particles.forEach(p => {
-        p.update();
-        p.draw();
-      });
-      requestAnimationFrame(animate);
+
+      if (showImage) {
+        ctx.drawImage(img, centerX, centerY, iw, ih);
+      } else {
+        particles.forEach(p => {
+          p.update();
+          p.draw();
+        });
+      }
+
+      requestAnimationFrame(() => animate(centerX, centerY, iw, ih));
     }
 
     img.onload = () => {
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
-      const iw = img.width;
-      const ih = img.height;
+      const scale = 0.5;
+      const iw = img.width * scale;
+      const ih = img.height * scale;
       tempCanvas.width = iw;
       tempCanvas.height = ih;
-      tempCtx.drawImage(img, 0, 0);
+      tempCtx.drawImage(img, 0, 0, iw, ih);
       const imageData = tempCtx.getImageData(0, 0, iw, ih);
       const centerX = width / 2 - iw / 2;
       const centerY = height / 2 - ih / 2;
       createParticles(imageData, centerX, centerY);
-      animate();
+      animate(centerX, centerY, iw, ih);
     };
 
     canvas.addEventListener('click', () => {
-      if (!exploded) {
+      if (showImage) {
+        showImage = false;
         exploded = true;
         particles.forEach(p => p.reassembling = false);
       } else {
         particles.forEach(p => p.reassembling = true);
-        setTimeout(() => { exploded = false; }, 1000);
+        setTimeout(() => {
+          exploded = false;
+          particles.forEach(p => p.reset());
+        }, 1200);
       }
     });
 
