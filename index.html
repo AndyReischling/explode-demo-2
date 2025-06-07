@@ -28,7 +28,8 @@
     let showImage = true;
     let ready = false;
     let centerX = 0, centerY = 0, iw = 0, ih = 0;
-    let imgVX = 1.2, imgVY = 1.1;
+    let imgVX = Math.random() * 1 + 0.5;
+    let imgVY = Math.random() * 1 + 0.5;
 
     function resize() {
       width = canvas.width = window.innerWidth;
@@ -102,8 +103,8 @@
       ctx.clearRect(0, 0, width, height);
 
       if (showImage) {
-        centerX += imgVX;
-        centerY += imgVY;
+        centerX += imgVX * Math.sin(Date.now() * 0.001);
+        centerY += imgVY * Math.cos(Date.now() * 0.001);
 
         if (centerX <= 0 || centerX + iw >= width) imgVX *= -1;
         if (centerY <= 0 || centerY + ih >= height) imgVY *= -1;
@@ -122,15 +123,15 @@
     img.onload = () => {
       const tempCanvas = document.createElement('canvas');
       const tempCtx = tempCanvas.getContext('2d');
-      const scale = 0.3;
+      const scale = 0.05;
       iw = img.width * scale;
       ih = img.height * scale;
       tempCanvas.width = iw;
       tempCanvas.height = ih;
       tempCtx.drawImage(img, 0, 0, iw, ih);
-      const imageData = tempCtx.getImageData(0, 0, iw, ih);
       centerX = width / 2 - iw / 2;
       centerY = height / 2 - ih / 2;
+      const imageData = tempCtx.getImageData(0, 0, iw, ih);
       createParticles(imageData, centerX, centerY);
       ready = true;
       animate();
